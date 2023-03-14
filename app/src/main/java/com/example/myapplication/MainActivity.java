@@ -4,6 +4,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
+import android.provider.ContactsContract;
 import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
@@ -12,9 +13,12 @@ import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -31,6 +35,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView textViewData;
 
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
+    private CollectionReference notebookRef = db.collection("users");
     private DocumentReference noteRef = db.collection("users").document();
 
 
@@ -41,7 +46,7 @@ public class MainActivity extends AppCompatActivity {
 
         editTextnombre = findViewById(R.id.edit_text_nombre);
         editTextedad = findViewById(R.id.edit_text_edad);
-        textViewData=findViewById(R.id.text_view_data);
+        textViewData = findViewById(R.id.text_view_data);
     }
 
     public void saveNote(View v) {
@@ -73,32 +78,23 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void loadNote(View v){
-        noteRef.get()
-                .addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
+        notebookRef.get()
+                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
                     @Override
-                    public void onSuccess(DocumentSnapshot documentSnapshot) {
-                        if (documentSnapshot.exists()){
-                            String name = documentSnapshot.getString(key_name);
-                            String age = documentSnapshot.getString(key_age);
+                    public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+                        String data="";
+                        for (QueryDocumentSnapshot documenSnapshop : queryDocumentSnapshots){
+                           Note note =documenSnapshop.toObject(Note.class);
 
-                            //Map<String, Object> note = documentSnapshot.getData();
-                            textViewData.setText("Name: " + name + "\n" + "Age: " + age);
+                           String name = note.getName();
+                           long age = note.getAge();
 
-                        }else {
-                            Toast.makeText(MainActivity.this, "This Document does not exist!", Toast.LENGTH_SHORT).show();
+                            data +=   name + "\nAge: " + age + "\n\n";
+
                         }
-
-                    }
-                })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Toast.makeText(MainActivity.this, "Error!", Toast.LENGTH_SHORT).show();
-                        Log.d(TAG, e.toString());
-
+                        textViewData.setText(data);
                     }
                 });
-
     }
 
 }
